@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Research Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: #e0e0e0;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h2, h3 {
+      color: #ffffff;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 50%;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+      background-color: #2b2b2b;
+      color: #ffffff;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #00c9ff;
+      background: linear-gradient(45deg, #00c9ff, #92fe9d);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px #00c9ff;
+    }
+
+    #responseBox {
+      white-space: pre-wrap;
+      margin-top: 30px;
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+      font-size: 18px; 
+    }
+
+    a {
+      color: #87cefa;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h2>Ask a Research Question:</h2>
+  <input type="text" id="query" placeholder="Type your question" size="50"/>
+  <button onclick="sendQuery()">Submit</button>
+
+  <h3>Response:</h3>
+  <div id="responseBox">Waiting...</div>
+
+  <script>
+    async function sendQuery() {
+      const query = document.getElementById("query").value;
+      const responseBox = document.getElementById("responseBox");
+
+      responseBox.textContent = "⏳ Processing...";
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/ask", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ query })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          const sources = (data.sources || []).map(src =>
+            src.startsWith("http") ? src : `https://en.wikipedia.org/wiki/${src.replace(/\s/g, "_")}`
+          );
+
+          responseBox.innerHTML = `
+            📌 <b>Topic:</b> ${data.topic}<br><br>
+            📝 <b>Summary:</b><br>${data.summary}<br><br>
+            🔗 <b>Sources:</b><br>${sources.map(src => `<a href="${src}" target="_blank">${src}</a>`).join("<br>")}
+          `;
+        } else {
+          responseBox.textContent = "⚠️ Error: " + data.error;
+        }
+      } catch (err) {
+        responseBox.textContent = "❌ Could not connect to backend.\n" + err;
+      }
+    }
+  </script>
+</body>
+</html>
+<!-- http://127.0.0.1:5500/ -->
